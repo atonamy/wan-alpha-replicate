@@ -239,14 +239,13 @@ def render_video(tensor_fgr,
         frames_fgr.append(frame_fgr)
         frames_pha.append(frame_pha)
 
-    def create_checkerboard(size=8, pattern_size=(512, 512)):
-        img = Image.new('RGB', (pattern_size[0], pattern_size[1]), (255, 255, 255))
+    def create_checkerboard(size=30, pattern_size=(830, 480), color1=(140, 140, 140), color2=(113, 113, 113)):
+        img = Image.new('RGB', (pattern_size[0], pattern_size[1]), color1)
         draw = ImageDraw.Draw(img)
-
         for i in range(0, pattern_size[0], size):
             for j in range(0, pattern_size[1], size):
                 if (i + j) // size % 2 == 0:
-                    draw.rectangle([i, j, i+size, j+size], fill=(200, 200, 200))
+                    draw.rectangle([i, j, i+size, j+size], fill=color2)
         return img
 
     def blender_background(frame_rgba, checkerboard):
