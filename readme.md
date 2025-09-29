@@ -44,7 +44,7 @@
 | :---: | :---: | :---: |
 | "Medium shot. A little girl holds a bubble wand and blows out colorful bubbles that float and pop in the air. The background of this video is transparent. Realistic style." | <img src="assets/girl.gif" width="320" height="180" style="object-fit:contain; display:block; margin:auto;"/> | <img src="assets/girl_pha.gif" width="320" height="180" style="object-fit:contain; display:block; margin:auto;"/> |
 
-##### For more results, please visit [https://Wan-Alpha.github.io/](https://www.xxx)
+##### For more results, please visit [Our Website](https://donghaotian123.github.io/Wan-Alpha/)
 
 ### 🚀 Quick Start
 
