@@ -8,7 +8,7 @@
 
 
 
-[![arXiv](https://img.shields.io/badge/arXiv-2509.24979)](https://arxiv.org/pdf/2509.24979)
+[![arXiv](https://img.shields.io/badge/arXiv-2509.24979-red)](https://arxiv.org/pdf/2509.24979)
 [![Project Page](https://img.shields.io/badge/Project_Page-Link-green)](https://donghaotian123.github.io/Wan-Alpha/)
 [![🤗 HuggingFace](https://img.shields.io/badge/%F0%9F%A4%97%20HuggingFace-Model-orange)](https://huggingface.co/htdong/Wan-Alpha)
 [![ComfyUI](https://img.shields.io/badge/ComfyUI-Version-blue)](https://huggingface.co/htdong/Wan-Alpha_ComfyUI)
