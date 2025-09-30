@@ -8,7 +8,7 @@
 
 
 
-<!-- [![arXiv](https://img.shields.io/badge/arXiv-xxxx-b31b1b)](https://arxiv.org/abs/) -->
+[![arXiv](https://img.shields.io/badge/arXiv-2509.24979)](https://arxiv.org/pdf/2509.24979)
 [![Project Page](https://img.shields.io/badge/Project_Page-Link-green)](https://donghaotian123.github.io/Wan-Alpha/)
 [![🤗 HuggingFace](https://img.shields.io/badge/%F0%9F%A4%97%20HuggingFace-Model-orange)](https://huggingface.co/htdong/Wan-Alpha)
 [![ComfyUI](https://img.shields.io/badge/ComfyUI-Version-blue)](https://huggingface.co/htdong/Wan-Alpha_ComfyUI)
@@ -23,6 +23,7 @@
 ---
 
 ### 🔥 News
+* **[2025.09.30]** Our technical report is available on [arXiv](https://arxiv.org/pdf/2509.24979).
 * **[2025.09.30]** Released Wan-Alpha v1.0, the Wan2.1-14B-T2V–adapted weights and inference code are now open-sourced.
 
 ---
@@ -140,18 +141,22 @@ This project is built upon the following excellent open-source projects:
 
 We sincerely thank the authors and contributors of these projects.
 
-<!-- ---
 
 ### ✏ Citation
 
 If you find our work helpful for your research, please consider citing our paper:
 
 ```bibtex
-@article{
+@misc{dong2025wanalpha,
+      title={Wan-Alpha: High-Quality Text-to-Video Generation with Alpha Channel}, 
+      author={Haotian Dong and Wenjing Wang and Chen Li and Di Lin},
+      year={2025},
+      eprint={2509.24979},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2509.24979}, 
 }
-``` -->
-
----
+``` 
 
 ### 📬 Contact Us
 
