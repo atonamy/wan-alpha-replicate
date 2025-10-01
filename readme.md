@@ -126,6 +126,8 @@ ComfyUI/models
 
 3. Install our custom RGBA video previewer and PNG frames zip packer. Copy the file [RGBA_save_tools.py](comfyui/RGBA_save_tools.py) into the `ComfyUI/custom_nodes` folder.
 
+- Thanks to @mr-lab for an improved WebP version! You can find it in this [issue](https://github.com/WeChatCV/Wan-Alpha/issues/4).
+
 4. Example workflow: [wan_alpha_t2v_14B.json](comfyui/wan_alpha_t2v_14B.json)
 
 <img src="comfyui/comfyui.jpg" style="margin:auto;"/>
