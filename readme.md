@@ -1,20 +1,56 @@
 <div align="center">
 
   <h1>
-    Wan-Alpha
+    Wan-Alpha for Replicate
   </h1>
 
-  <h3>Wan-Alpha: High-Quality Text-to-Video Generation with Alpha Channel</h3>
+  <h3>Wan-Alpha: High-Quality Text-to-Video Generation with Alpha Channel - Replicate Deployment</h3>
 
-
+  <p><strong>Fork of the original Wan-Alpha with WebM/WebP export and Replicate API support</strong></p>
 
 [![arXiv](https://img.shields.io/badge/arXiv-2509.24979-red)](https://arxiv.org/pdf/2509.24979)
 [![Project Page](https://img.shields.io/badge/Project_Page-Link-green)](https://donghaotian123.github.io/Wan-Alpha/)
 [![🤗 HuggingFace](https://img.shields.io/badge/%F0%9F%A4%97%20HuggingFace-Model-orange)](https://huggingface.co/htdong/Wan-Alpha)
-[![ComfyUI](https://img.shields.io/badge/ComfyUI-Version-blue)](https://huggingface.co/htdong/Wan-Alpha_ComfyUI)
-
+[![Original Repo](https://img.shields.io/badge/Original-Repo-blue)](https://github.com/WeChatCV/Wan-Alpha)
 
 </div>
+
+---
+
+## 🆕 What's New in This Fork?
+
+This repository adapts the original [Wan-Alpha](https://github.com/WeChatCV/Wan-Alpha) for deployment on Replicate with enhanced output formats and API accessibility.
+
+### Key Changes:
+
+**✨ New Output Formats:**
+- 🎬 **WebM (VP9)** - Animated video with alpha channel support
+- 🖼️ **WebP** - Animated image format with transparency
+- ❌ Removed MP4 (doesn't support transparency)
+
+**📐 Custom Resolutions:**
+- Added `512x512 (fit vertical)` - Renders at 480x832, fits to 512x512 with transparent padding
+- Added `512x512 (fit horizontal)` - Renders at 832x480, fits to 512x512 with transparent padding
+- Maintains original 4 supported resolutions (720x1280, 1280x720, 480x832, 832x480)
+
+**⚙️ Enhanced Controls:**
+- **FPS Control**: Adjustable frame rate (1-60 fps)
+- **Quality Control**: Output quality control (1-100)
+- **FFmpeg Integration**: Professional video encoding with transparency preservation
+
+**☁️ Replicate Deployment:**
+- `cog.yaml` configuration for Replicate
+- `predict.py` API interface
+- Automated weight downloading during build (~32-52GB)
+- Single-file output (WebM or WebP)
+
+**🔧 Technical Improvements:**
+- Removed deprecated `prefetch_weights.py` script
+- Inline weight downloads in `cog.yaml` for build-time caching
+- Proper error handling and cleanup
+- Alpha channel preservation throughout pipeline
+
+---
 
 <img src="assets/teaser.png" alt="Wan-Alpha Qualitative Results" style="max-width: 100%; height: auto;">
 
@@ -133,9 +169,34 @@ ComfyUI/models
 <img src="comfyui/comfyui.jpg" style="margin:auto;"/>
 
 
+### 🚀 Deploy to Replicate
+
+**Option 1: Via Replicate Web UI (Recommended)**
+
+1. Push this repository to GitHub
+2. Go to [replicate.com/create](https://replicate.com/create)
+3. Click "Import from GitHub"
+4. Select your repository
+5. Replicate will automatically detect `cog.yaml` and build on their servers
+
+**Option 2: Via Replicate CLI**
+
+```bash
+# Install Replicate
+pip install replicate
+
+# Create model from GitHub
+replicate models create YOUR-USERNAME wan-alpha --github-url https://github.com/YOUR-USERNAME/wan-alpha-replicate
+```
+
+**Note:** The initial build takes 30-60+ minutes as it downloads ~32-52GB of model weights. This only happens once during deployment.
+
+---
+
 ### 🤝 Acknowledgements
 
 This project is built upon the following excellent open-source projects:
+* [Wan-Alpha](https://github.com/WeChatCV/Wan-Alpha) (original implementation)
 * [DiffSynth-Studio](https://github.com/modelscope/DiffSynth-Studio) (training/inference framework)
 * [Wan2.1](https://github.com/Wan-Video/Wan2.1) (base video generation model)
 * [LightX2V](https://github.com/ModelTC/LightX2V) (inference acceleration)
