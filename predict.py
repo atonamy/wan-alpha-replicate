@@ -126,11 +126,21 @@ def convert_to_format(
     rgba_frames: List[np.ndarray],
     output_path: Path,
     output_format: str,
-    fps: int,
+    input_fps: float,
+    output_fps: int,
     quality: int,
     resize: str = "none",
+    remove_first_frame: bool = False,
+    remove_last_frame: bool = False,
 ) -> None:
-    """Convert RGBA frames to webm or webp using ffmpeg."""
+    """Convert RGBA frames to webm or webp using ffmpeg.
+
+    Args:
+        input_fps: The framerate at which frames were generated (real_fps)
+        output_fps: The desired output framerate (user-specified fps)
+        remove_first_frame: Remove first frame from final video
+        remove_last_frame: Remove last frame from final video
+    """
     workdir = output_path.parent
     temp_dir = workdir / "temp_frames"
     temp_dir.mkdir(exist_ok=True)
@@ -143,11 +153,38 @@ def convert_to_format(
     # Build ffmpeg command
     input_pattern = str(temp_dir / "frame_%05d.png")
 
+    # Build video filter chain
+    vf_filters = []
+
+    # IMPORTANT: fps filter must come FIRST to do framerate conversion
+    # Then select filter operates on the converted frames (final video frames)
+    vf_filters.append(f"fps={output_fps}")
+
+    # Add frame trimming filter if requested (operates on frames AFTER fps conversion)
+    if remove_first_frame and remove_last_frame:
+        # Calculate expected output frames after fps conversion
+        total_frames = int((len(rgba_frames) / input_fps) * output_fps)
+        vf_filters.append(f"select='between(n\\,1\\,{total_frames-2})'")
+        vf_filters.append("setpts=N/FRAME_RATE/TB")
+    elif remove_first_frame:
+        vf_filters.append("select='gte(n\\,1)'")
+        vf_filters.append("setpts=N/FRAME_RATE/TB")
+    elif remove_last_frame:
+        # Calculate expected output frames after fps conversion
+        total_frames = int((len(rgba_frames) / input_fps) * output_fps)
+        vf_filters.append(f"select='lt(n\\,{total_frames-1})'")
+        vf_filters.append("setpts=N/FRAME_RATE/TB")
+
+    # Add resize filter if requested (applied last)
+    if resize != "none":
+        width, height = resize.split("x")
+        vf_filters.append(f"scale={width}:{height}:force_original_aspect_ratio=decrease,pad={width}:{height}:(ow-iw)/2:(oh-ih)/2:color=0x00000000")
+
     if output_format == "webm":
         # WebM with VP9 codec and alpha channel
         cmd = [
             "ffmpeg", "-y",
-            "-framerate", str(fps),
+            "-framerate", str(input_fps),  # Input framerate (how frames were generated)
             "-i", input_pattern,
             "-c:v", "libvpx-vp9",
             "-pix_fmt", "yuva420p",
@@ -158,11 +195,8 @@ def convert_to_format(
         crf = int(63 - (quality - 1) * 53 / 99)
         cmd.extend(["-crf", str(crf)])
 
-        if resize != "none":
-            width, height = resize.split("x")
-            # Scale to fit within square while maintaining aspect ratio, then pad with transparency
-            vf = f"scale={width}:{height}:force_original_aspect_ratio=decrease,pad={width}:{height}:(ow-iw)/2:(oh-ih)/2:color=0x00000000"
-            cmd.extend(["-vf", vf])
+        # Apply filter chain (fps conversion + frame removal + resize)
+        cmd.extend(["-vf", ",".join(vf_filters)])
 
         cmd.append(str(output_path))
 
@@ -170,15 +204,12 @@ def convert_to_format(
         # Animated WebP with alpha channel
         cmd = [
             "ffmpeg", "-y",
-            "-framerate", str(fps),
+            "-framerate", str(input_fps),  # Input framerate (how frames were generated)
             "-i", input_pattern,
         ]
 
-        if resize != "none":
-            width, height = resize.split("x")
-            # Scale to fit within square while maintaining aspect ratio, then pad with transparency
-            vf = f"scale={width}:{height}:force_original_aspect_ratio=decrease,pad={width}:{height}:(ow-iw)/2:(oh-ih)/2:color=0x00000000"
-            cmd.extend(["-vf", vf])
+        # Apply filter chain (fps conversion + frame removal + resize)
+        cmd.extend(["-vf", ",".join(vf_filters)])
 
         # Quality for WebP (0-100, higher is better) and loop infinitely
         # pix_fmt yuva420p ensures alpha channel is preserved
@@ -260,7 +291,9 @@ class Predictor(BasePredictor):
         ),
         num_frames: int = Input(
             default=81,
-            description="Total frames (must satisfy 4n+1; default ≈5s at 16fps).",
+            ge=5,
+            le=121,
+            description="Desired number of frames (5-121). Internally adjusted to valid 4n+1 values (min 81, max 121).",
         ),
         sample_steps: int = Input(
             default=4,
@@ -286,9 +319,9 @@ class Predictor(BasePredictor):
         ),
         fps: int = Input(
             default=16,
-            ge=1,
-            le=60,
-            description="Output framerate (1-60 fps).",
+            ge=5,
+            le=30,
+            description="Output framerate (5-30 fps).",
         ),
         output_quality: int = Input(
             default=85,
@@ -296,9 +329,30 @@ class Predictor(BasePredictor):
             le=100,
             description="Output quality (1-100, higher is better).",
         ),
+        remove_first_frame: bool = Input(
+            default=False,
+            description="Remove the first frame from the final output video.",
+        ),
+        remove_last_frame: bool = Input(
+            default=False,
+            description="Remove the last frame from the final output video.",
+        ),
     ) -> CogPath:
-        if num_frames % 4 != 1:
-            raise ValueError("`num_frames` must satisfy 4n + 1 (e.g. 33, 49, 81).")
+        # Smart frame adjustment: map desired frames to valid 4n+1 values (min 81, max 121)
+        VALID_FRAMES = [81, 85, 89, 93, 97, 101, 105, 109, 113, 117, 121]
+
+        # Calculate desired duration
+        desired_duration = num_frames / fps
+
+        # Determine actual frames to generate
+        if num_frames < 81:
+            actual_frames = 81  # Use minimum
+        else:
+            # Find nearest valid frame count >= num_frames
+            actual_frames = next((f for f in VALID_FRAMES if f >= num_frames), 121)
+
+        # Calculate real fps for generation (to match desired duration)
+        real_fps = actual_frames / desired_duration
 
         # Handle 512x512 workarounds: render at supported resolution then fit with transparent padding
         actual_resolution = resolution
@@ -317,7 +371,7 @@ class Predictor(BasePredictor):
         videos_fgr, videos_pha = self.pipeline.generate(
             input_prompt=prompt,
             size=size,
-            frame_num=num_frames,
+            frame_num=actual_frames,
             shift=5.0,
             sample_solver=solver,
             sampling_steps=sample_steps,
@@ -342,9 +396,12 @@ class Predictor(BasePredictor):
             rgba_frames=rgba_frames,
             output_path=output_path,
             output_format=output_format,
-            fps=fps,
+            input_fps=real_fps,
+            output_fps=fps,
             quality=output_quality,
             resize=target_resize,
+            remove_first_frame=remove_first_frame,
+            remove_last_frame=remove_last_frame,
         )
 
         return CogPath(str(output_path))
