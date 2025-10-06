@@ -1,0 +1,42 @@
+build:
+  cuda: "12.1"
+  python_version: "3.11"
+  system_packages:
+    - git
+    - ffmpeg
+    - libsm6
+    - libxext6
+    - libglib2.0-0
+    - libgl1
+    - build-essential
+    - ninja-build
+    - cmake
+    - unzip
+  run:
+    - pip install --upgrade pip
+    - pip install \
+        "torch==2.4.0" \
+        "torchvision==0.19.0" \
+        "opencv-python>=4.9.0.80" \
+        "diffusers==0.31.0" \
+        "transformers>=4.49.0" \
+        "tokenizers>=0.20.3" \
+        "accelerate>=1.1.1" \
+        "huggingface_hub>=0.24.0" \
+        tqdm \
+        imageio \
+        easydict \
+        ftfy \
+        dashscope \
+        imageio-ffmpeg \
+        "gradio>=5.0.0" \
+        "numpy>=1.23.5,<2" \
+        "xfuser>=0.4.1"
+    - pip install --no-build-isolation flash-attn==2.6.1
+    - mkdir -p /weights/hf /weights/wan2.1_t2v_14b /weights/wan_alpha /weights/lightx2v
+    - python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='Wan-AI/Wan2.1-T2V-14B', local_dir='/weights/wan2.1_t2v_14b', local_dir_use_symlinks=False, allow_patterns=['*.json', '*.safetensors', '*.bin', '*.pt', '*.pth', '*.model', '*.txt', '*.py'])"
+    - python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='htdong/Wan-Alpha', filename='decoder.bin', local_dir='/weights/wan_alpha', local_dir_use_symlinks=False)"
+    - python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='htdong/Wan-Alpha', filename='epoch-13-1500.safetensors', local_dir='/weights/wan_alpha', local_dir_use_symlinks=False)"
+    - python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='Kijai/WanVideo_comfy', filename='Lightx2v/lightx2v_T2V_14B_cfg_step_distill_v2_lora_rank64_bf16.safetensors', local_dir='/weights/lightx2v', local_dir_use_symlinks=False)"
+
+predict: "predict.py:Predictor"
