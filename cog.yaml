@@ -13,6 +13,7 @@ build:
     - cmake
     - unzip
   run:
+    - export CUDA_HOME=/usr/local/cuda
     - pip install --upgrade pip
     - pip install \
         "torch==2.4.0" \
