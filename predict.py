@@ -89,16 +89,37 @@ def render_rgba_video(
     rgba_frames: List[np.ndarray] = []
     print(f"[render_rgba_video] Using np.maximum() for alpha channel extraction")
     for frame_idx, (frame_fgr, frame_pha) in enumerate(zip(tensor_fgr.numpy(), tensor_pha.numpy())):
+        if frame_idx == 0:
+            # Log raw alpha channel values BEFORE processing
+            print(f"[render_rgba_video] Frame 0 RAW alpha channels - R: [{frame_pha[:,:,0].min():.2f}, {frame_pha[:,:,0].max():.2f}], G: [{frame_pha[:,:,1].min():.2f}, {frame_pha[:,:,1].max():.2f}], B: [{frame_pha[:,:,2].min():.2f}, {frame_pha[:,:,2].max():.2f}]")
+
         # Use max instead of average to preserve strongest alpha signal
         alpha = np.maximum(
             np.maximum(frame_pha[:, :, 0:1], frame_pha[:, :, 1:2]),
             frame_pha[:, :, 2:3]
         )
+
         if frame_idx == 0:
-            print(f"[render_rgba_video] Frame 0 alpha stats - min: {alpha.min():.2f}, max: {alpha.max():.2f}, mean: {alpha.mean():.2f}")
+            # Log AFTER np.maximum processing
+            print(f"[render_rgba_video] Frame 0 AFTER np.maximum() - alpha range: [{alpha.min():.2f}, {alpha.max():.2f}], mean: {alpha.mean():.2f}")
+            # Log sample of actual pixel values in center of frame
+            h, w = alpha.shape[:2]
+            center_alpha = alpha[h//2-10:h//2+10, w//2-10:w//2+10]
+            print(f"[render_rgba_video] Frame 0 center region (20x20px) alpha - min: {center_alpha.min():.2f}, max: {center_alpha.max():.2f}, mean: {center_alpha.mean():.2f}")
+
+        # Convert to uint8 (0-255 range)
+        alpha_uint8 = alpha.astype(np.uint8)
+
+        if frame_idx == 0:
+            print(f"[render_rgba_video] Frame 0 AFTER uint8 conversion - alpha range: [{alpha_uint8.min()}, {alpha_uint8.max()}], mean: {alpha_uint8.mean():.2f}")
+
         rgba = np.concatenate(
-            [frame_fgr[:, :, ::-1], alpha.astype(np.uint8)], axis=2
+            [frame_fgr[:, :, ::-1], alpha_uint8], axis=2
         )
+
+        if frame_idx == 0:
+            print(f"[render_rgba_video] Frame 0 FINAL RGBA - shape: {rgba.shape}, alpha channel: [{rgba[:,:,3].min()}, {rgba[:,:,3].max()}], mean: {rgba[:,:,3].mean():.2f}")
+
         composite_frames.append(blend_checkerboard(rgba, checkerboard))
         rgba_frames.append(rgba)
 
@@ -151,7 +172,10 @@ def convert_to_format(
     temp_dir.mkdir(exist_ok=True)
 
     # Save RGBA frames as PNGs
+    print(f"[convert_to_format] Saving {len(rgba_frames)} RGBA frames as PNGs...")
     for idx, frame in enumerate(rgba_frames):
+        if idx == 0:
+            print(f"[convert_to_format] Frame 0 before PNG save - RGBA shape: {frame.shape}, alpha: [{frame[:,:,3].min()}, {frame[:,:,3].max()}], mean: {frame[:,:,3].mean():.2f}")
         frame_path = temp_dir / f"frame_{idx:05d}.png"
         cv2.imwrite(str(frame_path), frame)
 
@@ -228,8 +252,10 @@ def convert_to_format(
         cmd.append(str(output_path))
 
     # Run ffmpeg
+    print(f"[convert_to_format] Running FFmpeg: {' '.join(cmd[:10])}...")
     try:
         result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        print(f"[convert_to_format] FFmpeg encoding complete - output: {output_path.name}")
     except subprocess.CalledProcessError as e:
         # Cleanup temp frames before raising error
         for f in temp_dir.glob("*.png"):
