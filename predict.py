@@ -87,11 +87,11 @@ def render_rgba_video(
     composite_frames: List[np.ndarray] = []
     rgba_frames: List[np.ndarray] = []
     for frame_fgr, frame_pha in zip(tensor_fgr.numpy(), tensor_pha.numpy()):
-        alpha = (
-            frame_pha[:, :, 0:1]
-            + frame_pha[:, :, 1:2]
-            + frame_pha[:, :, 2:3]
-        ) / 3.0
+        # Use max instead of average to preserve strongest alpha signal
+        alpha = np.maximum(
+            np.maximum(frame_pha[:, :, 0:1], frame_pha[:, :, 1:2]),
+            frame_pha[:, :, 2:3]
+        )
         rgba = np.concatenate(
             [frame_fgr[:, :, ::-1], alpha.astype(np.uint8)], axis=2
         )
