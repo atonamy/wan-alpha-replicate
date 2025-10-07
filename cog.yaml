@@ -1,3 +1,4 @@
+# Version: 1.0.1 - Enhanced alpha logging and np.maximum fix
 build:
   gpu: true
   cuda: "12.1"
