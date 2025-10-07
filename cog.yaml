@@ -1,8 +1,8 @@
-# Version: 1.0.1 - Enhanced alpha logging and np.maximum fix
+# Version: 1.0.2 - Enhanced alpha logging and np.maximum fix
 build:
   gpu: true
   cuda: "12.1"
-  python_version: "3.11.9"
+  python_version: "3.11"
   system_packages:
     - git
     - ffmpeg
