@@ -50,6 +50,7 @@ def render_rgba_video(
     nrow: int = 1,
 ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
     """Convert latent tensors into RGB preview frames and RGBA PNG-ready frames."""
+    print(f"[render_rgba_video] Processing tensors - fgr shape: {tensor_fgr.shape}, pha shape: {tensor_pha.shape}")
     tensor_fgr = tensor_fgr.clamp(-1, 1)
     tensor_fgr = torch.stack(
         [
@@ -86,18 +87,22 @@ def render_rgba_video(
 
     composite_frames: List[np.ndarray] = []
     rgba_frames: List[np.ndarray] = []
-    for frame_fgr, frame_pha in zip(tensor_fgr.numpy(), tensor_pha.numpy()):
+    print(f"[render_rgba_video] Using np.maximum() for alpha channel extraction")
+    for frame_idx, (frame_fgr, frame_pha) in enumerate(zip(tensor_fgr.numpy(), tensor_pha.numpy())):
         # Use max instead of average to preserve strongest alpha signal
         alpha = np.maximum(
             np.maximum(frame_pha[:, :, 0:1], frame_pha[:, :, 1:2]),
             frame_pha[:, :, 2:3]
         )
+        if frame_idx == 0:
+            print(f"[render_rgba_video] Frame 0 alpha stats - min: {alpha.min():.2f}, max: {alpha.max():.2f}, mean: {alpha.mean():.2f}")
         rgba = np.concatenate(
             [frame_fgr[:, :, ::-1], alpha.astype(np.uint8)], axis=2
         )
         composite_frames.append(blend_checkerboard(rgba, checkerboard))
         rgba_frames.append(rgba)
 
+    print(f"[render_rgba_video] Generated {len(rgba_frames)} RGBA frames")
     return composite_frames, rgba_frames
 
 
@@ -338,6 +343,8 @@ class Predictor(BasePredictor):
             description="Remove the last frame from the final output video.",
         ),
     ) -> CogPath:
+        print(f"[predict] Starting generation - prompt: '{prompt[:50]}...', resolution: {resolution}")
+
         # Smart frame adjustment: map desired frames to valid 4n+1 values (min 81, max 121)
         VALID_FRAMES = [81, 85, 89, 93, 97, 101, 105, 109, 113, 117, 121]
 
@@ -354,6 +361,8 @@ class Predictor(BasePredictor):
         # Calculate real fps for generation (to match desired duration)
         real_fps = actual_frames / desired_duration
 
+        print(f"[predict] Frame calculation - requested: {num_frames}, actual: {actual_frames}, real_fps: {real_fps:.2f}, output_fps: {fps}")
+
         # Handle 512x512 workarounds: render at supported resolution then fit with transparent padding
         actual_resolution = resolution
         target_resize = "none"
@@ -368,6 +377,9 @@ class Predictor(BasePredictor):
         size = SIZE_CONFIGS[actual_resolution]
         neg_prompt = negative_prompt or DEFAULT_NEG_PROMPT
 
+        print(f"[predict] Generation params - size: {size}, frames: {actual_frames}, steps: {sample_steps}, guidance: {guidance_scale}, solver: {solver}, seed: {seed}")
+        print(f"[predict] Calling pipeline.generate()...")
+
         videos_fgr, videos_pha = self.pipeline.generate(
             input_prompt=prompt,
             size=size,
@@ -381,6 +393,8 @@ class Predictor(BasePredictor):
             offload_model=True,
         )
 
+        print(f"[predict] Pipeline generation complete. Processing output tensors...")
+
         composite_frames, rgba_frames = render_rgba_video(
             videos_fgr.unsqueeze(0), videos_pha.unsqueeze(0)
         )
@@ -390,6 +404,8 @@ class Predictor(BasePredictor):
         # Generate output file based on format
         output_ext = "webm" if output_format == "webm" else "webp"
         output_path = workdir / f"output.{output_ext}"
+
+        print(f"[predict] Converting to {output_format} format - quality: {output_quality}, resize: {target_resize}")
 
         # Convert to requested format using ffmpeg
         convert_to_format(
@@ -404,6 +420,7 @@ class Predictor(BasePredictor):
             remove_last_frame=remove_last_frame,
         )
 
+        print(f"[predict] Video generation complete - output: {output_path}")
         return CogPath(str(output_path))
 
     def _download_wan_base(self) -> Path:
