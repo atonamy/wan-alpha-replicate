@@ -34,6 +34,5 @@ build:
         "numpy>=1.23.5,<2" \
         "xfuser>=0.4.1"
     - "CUDA_HOME=/usr/local/cuda pip install --no-build-isolation flash-attn==2.6.1"
-    - mkdir -p /weights/hf /weights/wan2.1_t2v_14b /weights/wan_alpha /weights/lightx2v
 
 predict: "predict.py:Predictor"
