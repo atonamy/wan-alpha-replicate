@@ -272,6 +272,9 @@ def convert_to_format(
 class Predictor(BasePredictor):
     def setup(self) -> None:
         """Download weights and construct the Wan-Alpha pipeline."""
+        print("="*80)
+        print("🔥 SETUP STARTING - VERSION 1.0.1 WITH ENHANCED ALPHA LOGGING 🔥")
+        print("="*80)
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
 
